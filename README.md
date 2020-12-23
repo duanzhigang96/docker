@@ -30,12 +30,12 @@ $docker exec -it nginx  /bin/bash
 #挂载目录并运行
 docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
 ```
-
-
-
-
-
-
+  
+   
+  
+  
+  
+ 
 ## docker 镜像上传到 Docker Hub 仓库
 
 ### 1.将docker 容器提交为docker镜像
