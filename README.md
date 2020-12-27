@@ -1,7 +1,33 @@
 # docker
 learn docker
+- [docker 概述](#Docker概述)
+- [docker 安装](#docker安装)
+- [docker 命令](#docker命令)
+- [docker 镜像](#docker镜像)
+- [容器数据卷](#docker命令)
+- [dockerFile](#docker命令)
+- [docker网络原理](#docker命令)
+- [IDEA整合docker](#docker命令)
+- [docker compose](#docker命令)
+- [docker swarm（简化版k8s）](#docker命令)
+- [CI\CD JENKINS](#docker命令)
 
+Docker概述 
 
+Docker为什么出现？
+1. 开发-上线俩套环境！ 应用环境，配置
+2. 开发人员，运维人员
+3. 版本更新导致服务不可用
+4. 环境配置十分的麻烦，每一个机器都要部署环境（集群redis，es）！费时费力
+5. 项目带上环境进行安装打包。
+6. 环境不能跨平台
+7. 开发使用Windows 最后发布到Linux 
+
+Docker 思想
+docker 中心思想源于它的logo
+1. 隔离：集装箱 例如之前多个项目之间会有冲突，eg 端口冲突，版本冲突等等。
+
+ 
 ```bash
 #查看所有的docker 镜像
 $docker ps -a
@@ -36,6 +62,7 @@ docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/ne
   
   
  
+
 ## docker 镜像上传到 Docker Hub 仓库
 
 ### 1.将docker 容器提交为docker镜像
