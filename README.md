@@ -18,8 +18,15 @@ docker 学习笔记
       - [更高效的计算资源利用](#更高效的计算资源利用)
   - [docker安装](#docker安装)
     - [Docker的基本组成](#docker的基本组成)
-    - [环境准备](#环境准备)
+    - [帮助文档](#帮助文档)
+    - [阿里云镜像加速](#阿里云镜像加速)
   - [docker命令](#docker命令)
+    - [docker是怎么工作的](#docker是怎么工作的)
+    - [docker为什么比VM快](#docker为什么比vm快)
+    - [常用命令](#常用命令)
+      - [1.帮助命令](#1帮助命令)
+      - [2.镜像命令](#2镜像命令)
+      - [3.容器命令](#3容器命令)
   - [docker镜像](#docker镜像)
   - [容器数据卷](#容器数据卷)
   - [dockerFile](#dockerfile)
@@ -93,8 +100,115 @@ Docker 是内核级别的虚拟化，可以在物理机上可以运行多个运�
    官方的Docker Hub
    阿里云
    配置镜像加速
-### 环境准备
+### 帮助文档
+```shell
+# 1.卸载旧版本
+$ sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine 
+
+# 2.需要的安装包
+$ sudo yum install -y yum-utils
+
+# 3.设置镜像仓库
+$ sudo yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo #默认的是国外的
+    修改为阿里云的国内镜像仓库或者配置yum源
+
+# 4.安装docker相关的内容
+# 更新yum软件包索引
+# docker-ce 社区版 ee 企业版
+$ sudo yum install docker-ce docker-ce-cli containerd.io
+
+# 5.启动docker
+$ sudo systemctl start docker
+
+# 6.测试docker
+$ docker version
+$ sudo docker run hello-world
+
+# 7. 查看下载的hello-world镜像
+$ sudo docker images
+PS C:\WINDOWS\system32> docker images
+REPOSITORY    TAG       IMAGE ID       CREATED         SIZE
+hello-world   latest    bf756fb1ae65   11 months ago   13.3kB
+
+# 8. 卸载docker
+$ sudo yum remove docker-ce docker-ce-cli containerd.io
+$ sudo rm -rf /var/lib/docker
+```
+### 阿里云镜像加速
+1. 登录阿里云
+2. 找到镜像加速的位置
+3. 有镜像加速器
+4. 执行命令
+   ```shell
+   sudo mkider -p /etc/docker
+
+   sudo tee /etc/docker/daemon.json<<-'EOF'
+   {
+       "registry-mirrors":["https://qiyb99977.mirror.aliyuncs.com"]
+   }
+   EOF
+   sudo systemctl daemon-reload
+   sudo systemctl restart docker
+   ```
 ## docker命令 
+### docker是怎么工作的
+docker是一个CS 架构的系统。通过Socket从客户端访问。
+DockerServer接收到Docker-Clint的指令，就会执行这个命令。
+### docker为什么比VM快
+1. docker有着比虚拟机更少的抽象层
+2. docker利用的是宿主的内核，VM需要的是GuestOS
+新建一个容器的时候，docker不需要像虚拟机一样重新加载一个操作系统内核，避免引导，虚拟机是加载GuestOS，分钟级别的。虚拟机是硬件虚拟化。而docker是利用宿主主机的操作系统，省略了这个复杂的过程。
+### 常用命令
+#### 1.帮助命令
+```bash
+   docker version #显示docker的版本信息
+   docker info #详细信息 系统信息
+   docker 命令 --help #万能命令
+```
+#### 2.镜像命令
+```bash
+docker images #查看镜像信息
+PS C:\WINDOWS\system32> docker images
+REPOSITORY    TAG       IMAGE ID       CREATED         SIZE
+hello-world   latest    bf756fb1ae65   11 months ago   13.3kB
+# 解释
+REPOSITORY 镜像的仓库源
+TAG 镜像的标签
+IMAGE ID 镜像的ID
+CREATED 创建时间
+SIZE 大小
+
+Options:
+  -a, --all             Show all images (default hides intermediate images)
+      --digests         Show digests
+  -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print images using a Go template
+      --no-trunc        Don't truncate output
+  -q, --quiet           Only show image IDs 
+
+  
+  docker search mysql #搜索镜像
+  Options:
+  -f, --filter filter   Filter output based on conditions provided
+      --format string   Pretty-print search using a Go template
+      --limit int       Max number of search results (default 25)
+      --no-trunc        Don't truncate output
+PS C:\WINDOWS\system32> docker search mysql --filter=STARS=3000
+NAME      DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
+mysql     MySQL is a widely used, open-source relation…   10312     [OK]
+mariadb   MariaDB is a community-developed fork of MyS…   3822      [OK]
+```
+#### 3.容器命令
+
 ## docker镜像 
 ## 容器数据卷 
 ## dockerFile
@@ -131,14 +245,7 @@ $docker exec -it nginx  /bin/bash
 #挂载目录并运行
 docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
 ```
-  
-   
-  
-  
-  
- 
-
- docker 镜像上传到 Docker Hub 仓库
+docker 镜像上传到 Docker Hub 仓库
 
  1.将docker 容器提交为docker镜像
 ```bash
