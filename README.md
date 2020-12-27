@@ -177,6 +177,7 @@ DockerServer接收到Docker-Clint的指令，就会执行这个命令。
 #### 2.镜像命令
 ```bash
 docker images #查看镜像信息
+
 PS C:\WINDOWS\system32> docker images
 REPOSITORY    TAG       IMAGE ID       CREATED         SIZE
 hello-world   latest    bf756fb1ae65   11 months ago   13.3kB
@@ -186,7 +187,6 @@ TAG 镜像的标签
 IMAGE ID 镜像的ID
 CREATED 创建时间
 SIZE 大小
-
 Options:
   -a, --all             Show all images (default hides intermediate images)
       --digests         Show digests
@@ -206,6 +206,24 @@ PS C:\WINDOWS\system32> docker search mysql --filter=STARS=3000
 NAME      DESCRIPTION                                     STARS     OFFICIAL   AUTOMATED
 mysql     MySQL is a widely used, open-source relation…   10312     [OK]
 mariadb   MariaDB is a community-developed fork of MyS…   3822      [OK]
+
+#精髓
+docker pull #下载镜像
+
+PS C:\WINDOWS\system32> docker pull mysql
+Using default tag: latest #如果不写tag，默认就是lastes
+latest: Pulling from library/mysql
+6ec7b7d162b2: Pull complete #分层下载，docker image 的核心 联合文件系统
+6ec7b7d162b2: Pull complete
+6ec7b7d162b2: Pull complete
+6ec7b7d162b2: Pull complete
+Digest: sha256:78800e6d3f1b230e35275145e657b82c3fb02a27b2d8e76aac2f5e90c1c30873 #签名
+Status: Downloaded newer image for mysql:latest
+docker.io/library/mysql:latest #真实地址
+
+
+docker rmi # 删除镜像 可通过name 和 image id
+docker rmi -f $(docker images -aq) #递归删除全部镜像
 ```
 #### 3.容器命令
 
