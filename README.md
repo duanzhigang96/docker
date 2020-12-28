@@ -226,6 +226,27 @@ docker rmi # 删除镜像 可通过name 和 image id
 docker rmi -f $(docker images -aq) #递归删除全部镜像
 ```
 #### 3.容器命令
+```bash
+# 新建容器并启动
+docker run [可选参数] image
+# 参数说明
+--name="NAME" # 容器名字 同来区分容器
+-d # 后台方式运行
+-it # 使用交互的方式运行，进入容器查看内容
+-p # 指定容器的端口 -p 8080:8080
+  1. -p ip:主机端口:容器端口
+  2. -p 主机端口：容器端口
+  3. -p 容器端口
+  4. 容器端口
+-p # 随机指定端口
+
+docker run -it [容器NAME] /bin/bash # 启动并进入容器
+
+exit # 从容器中退出到主机
+
+docker ps # 查看当前正在运行的容器
+docker 
+```
 
 ## docker镜像 
 ## 容器数据卷 
