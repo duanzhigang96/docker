@@ -27,6 +27,16 @@ docker 学习笔记
       - [1.帮助命令](#1帮助命令)
       - [2.镜像命令](#2镜像命令)
       - [3.容器命令](#3容器命令)
+      - [退出容器](#退出容器)
+      - [删除容器](#删除容器)
+      - [启动和停止容器](#启动和停止容器)
+    - [常用命令其他命令](#常用命令其他命令)
+      - [后台启动容器](#后台启动容器)
+      - [查看日志](#查看日志)
+      - [查看容器中的进程信息](#查看容器中的进程信息)
+      - [查看容器中元数据](#查看容器中元数据)
+      - [进入当前正在运行的容器](#进入当前正在运行的容器)
+      - [从容器内拷贝文件到主机上](#从容器内拷贝文件到主机上)
   - [docker镜像](#docker镜像)
   - [容器数据卷](#容器数据卷)
   - [dockerFile](#dockerfile)
@@ -245,9 +255,58 @@ docker run -it [容器NAME] /bin/bash # 启动并进入容器
 exit # 从容器中退出到主机
 
 docker ps # 查看当前正在运行的容器
-docker 
+docker ps -a # 列出当前正在运行的容器，带出历史运行过的容器
+docker ps -n
 ```
-
+#### 退出容器
+```bash
+exit # 直接退出容器并退出
+Ctrl + Q + P #容器不停止并退出
+```
+#### 删除容器
+```bash
+docker rm 容器id # 删除所有容器 不能删除正在运行的容器 如果强制删除的使用 rm -f
+docker rm -f $(docekr ps -aq) # 删除所有容器
+docker ps -a -q|xargs docker rm # 删除所有容器
+```
+#### 启动和停止容器
+```bash
+docker start 容器id # 启动容器 
+docker restart # 重启容器
+docker stop # 停止容器
+docker kill # 强制停止容器
+```
+### 常用命令其他命令
+#### 后台启动容器
+```bash
+docker run -d 镜像名 # 启动容器 
+```
+#### 查看日志
+```bash
+docker logs 容器id# 查看日志 
+docker run --name="test-nginx"  -d nginx /bin/sh -c "while true;do echo duan;sleep 1;done" # 自己编写shell脚本 测试日志
+docker logs -tf --tail 10 a07511fd425b # 显示指定行日志
+```
+#### 查看容器中的进程信息
+```bash
+docker top 镜像id 
+```
+#### 查看容器中元数据
+```bash
+docker inspect 镜像id
+```
+#### 进入当前正在运行的容器
+```bash
+# 我们容器通常都是使用后台方式运行的，需要进入容器，修改一些配置
+# 命令1
+docker exec -it a07511fd425b /bash
+# 命令2
+docker attach 容器id
+```
+#### 从容器内拷贝文件到主机上
+```bash
+docker cp 0754eec7b305:/home/test.java ./  
+```
 ## docker镜像 
 ## 容器数据卷 
 ## dockerFile
