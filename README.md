@@ -27,9 +27,9 @@ docker 学习笔记
       - [1.帮助命令](#1帮助命令)
       - [2.镜像命令](#2镜像命令)
       - [3.容器命令](#3容器命令)
-      - [退出容器](#退出容器)
-      - [删除容器](#删除容器)
-      - [启动和停止容器](#启动和停止容器)
+      - [4.退出容器](#4退出容器)
+      - [5.删除容器](#5删除容器)
+      - [6.启动和停止容器](#6启动和停止容器)
     - [常用命令其他命令](#常用命令其他命令)
       - [后台启动容器](#后台启动容器)
       - [查看日志](#查看日志)
@@ -38,6 +38,11 @@ docker 学习笔记
       - [进入当前正在运行的容器](#进入当前正在运行的容器)
       - [从容器内拷贝文件到主机上](#从容器内拷贝文件到主机上)
   - [docker镜像](#docker镜像)
+    - [镜像是什么](#镜像是什么)
+    - [Docker镜像加载原理](#docker镜像加载原理)
+    - [UnionFS（联合文件系统）](#unionfs联合文件系统)
+    - [分层理解](#分层理解)
+    - [commit镜像](#commit镜像)
   - [容器数据卷](#容器数据卷)
   - [dockerFile](#dockerfile)
   - [docker网络原理](#docker网络原理)
@@ -258,18 +263,18 @@ docker ps # 查看当前正在运行的容器
 docker ps -a # 列出当前正在运行的容器，带出历史运行过的容器
 docker ps -n
 ```
-#### 退出容器
+#### 4.退出容器
 ```bash
 exit # 直接退出容器并退出
 Ctrl + Q + P #容器不停止并退出
 ```
-#### 删除容器
+#### 5.删除容器
 ```bash
 docker rm 容器id # 删除所有容器 不能删除正在运行的容器 如果强制删除的使用 rm -f
 docker rm -f $(docekr ps -aq) # 删除所有容器
 docker ps -a -q|xargs docker rm # 删除所有容器
 ```
-#### 启动和停止容器
+#### 6.启动和停止容器
 ```bash
 docker start 容器id # 启动容器 
 docker restart # 重启容器
@@ -308,6 +313,36 @@ docker attach 容器id
 docker cp 0754eec7b305:/home/test.java ./  
 ```
 ## docker镜像 
+### 镜像是什么
+镜像是一个轻量级的可执行的独立软件包，用来打包软件运行环境和基于运行环境开发的软件，它包含运行某个软件所需的所有内容，包括代码，运行时，库，环境变量和配置文件。
+所有的应用，直接打包docker镜像，就可以直接跑起来。
+如何得到镜像
+1. 从远程仓库下载
+2. 朋友copy给你
+3. 自己制作一个镜像DockerFile
+### Docker镜像加载原理
+### UnionFS（联合文件系统）
+### 分层理解 
+分层下载 重复复用
+### commit镜像
+```bash
+docker commit # 提交容器成为一个新的副本
+docker commit -m="描述信息" -a="作者" 容器id 目标镜像名 tag
+# docker 镜像上传到 Docker Hub 仓库
+docker commit -a "duanzhigang" -m "nginx test" 352ea94c14be dzg_nginx:v1
+
+参数说明:
+-a :提交的镜像作者；
+
+-c :使用Dockerfile指令来创建镜像；
+
+-m :提交时的说明文字；
+
+-p :在commit时，将容器暂停
+
+ 2.将docker 镜像上传到Docker Hub
+docker push duanzhigang/dzg_nginx:v1
+```
 ## 容器数据卷 
 ## dockerFile
 ## docker网络原理 
@@ -342,25 +377,4 @@ $docker exec -it nginx  /bin/bash
 
 #挂载目录并运行
 docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
-```
-docker 镜像上传到 Docker Hub 仓库
-
- 1.将docker 容器提交为docker镜像
-```bash
-docker commit -a "duanzhigang" -m "nginx test" 352ea94c14be dzg_nginx:v1
-```
-
-参数说明；
-
--a :提交的镜像作者；
-
--c :使用Dockerfile指令来创建镜像；
-
--m :提交时的说明文字；
-
--p :在commit时，将容器暂停
-
- 2.将docker 镜像上传到Docker Hub
-```bash
-docker push duanzhigang/dzg_nginx:v1
 ```
