@@ -606,5 +606,6 @@ docker build -t diytomcat .
 ## docker Compose 
 ## dockerSwarm（简化版k8s） 
 #挂载目录并运行
+```bash
 docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
 ```
