@@ -343,7 +343,100 @@ docker commit -a "duanzhigang" -m "nginx test" 352ea94c14be dzg_nginx:v1
  2.将docker 镜像上传到Docker Hub
 docker push duanzhigang/dzg_nginx:v1
 ```
-## 容器数据卷 
+## 容器数据卷
+### 匿名挂载&具名挂载
+```bash
+# 匿名挂载
+-v 容器内地址
+-P 随机指定端口
+docker run -d -P --name nginx01 -v /etc/nginx nginx
+
+# 查看所有的 volume 的情况
+docker volume ls
+# -v 没有指定容器外路径只指定了内部容器地址
+
+# 具名挂载
+#查看卷位置 没有指定目录的情况下  没有指定目录的情况下都在 /var/lib/docker/volumes/xxxx/_data
+#通过具名挂载可以方便找到卷的位置
+PS C:\Windows\system32> docker volume inspect juming-nginx
+[
+    {
+        "CreatedAt": "2021-01-04T02:05:53Z",
+        "Driver": "local",
+        "Labels": null,
+        "Mountpoint": "/var/lib/docker/volumes/juming-nginx/_data",
+        "Name": "juming-nginx",
+        "Options": null,
+        "Scope": "local"
+    }
+]
+```
+### 如何区分具名挂载、匿名挂载、指定容器挂载
+```bash
+-v 容器内路径 # 匿名挂载
+-v 卷名：容器内路径 # 具名挂载
+-v /宿主机路径：容器内路径 # 指定路径挂载
+
+# 拓展
+docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:ro nginx
+docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:rw nginx
+
+ro read only #只读 只能通过宿主机操作，不同通过容器内修改
+rw read write #可读可写
+# 一旦设置了容器权限，容器对我们挂载的内容就有限定。
+```
+### dockerFile方式实现挂载文件
+DockerFile 就是用来构建Docker镜像的构建文件。命令脚本,通过这个脚本生成一个脚本。
+镜像是一层一层的，脚本是一个个的命令，每个命令都是一层。
+
+```bash
+# 创建一个dockerFile，名字可以随机，建议使用Dockerfile
+# 文件中的内容 指令（大写） 参数
+FROM centos
+
+VOLUME ["volume01","volume02"]
+
+CMD echo "------end----"
+
+CMD /bin/bash
+
+# 这里每个命令都是镜像的一层
+
+# 执行dockerFile文件
+docker build -f dockerfile1 -t dzg/centos:1.0 .
+
+root@DESKTOP-55LGOP2:/home/docker-test-volume# docker build -f dockerfile1 -t dzg/centos:1.0 .
+Sending build context to Docker daemon  2.048kB
+Step 1/4 : FROM centos
+latest: Pulling from library/centos
+7a0437f04f83: Pull complete
+Digest: sha256:5528e8b1b1719d34604c87e11dcd1c0a20bedf46e83b5632cdeac91b8c04efc1
+Status: Downloaded newer image for centos:latest
+ ---> 300e315adb2f
+Step 2/4 : VOLUME ["volume01","volume02"]
+ ---> Running in 0cc6fac12531
+Removing intermediate container 0cc6fac12531
+ ---> bfe48ab0dcc0
+Step 3/4 : CMD echo "------end----"
+ ---> Running in ef9e250886db
+Removing intermediate container ef9e250886db
+ ---> 6b45bba8d564
+Step 4/4 : CMD /bin/bash
+ ---> Running in ae165fe7fc76
+Removing intermediate container ae165fe7fc76
+ ---> bd1940211df9
+Successfully built bd1940211df9
+Successfully tagged dzg/centos:1.0
+
+# 这种方式也可以实现卷挂载 如果构建时没有挂载卷，要手动镜像挂载 -v 卷名：容器内路径
+```
+### 数据卷容器
+实现多个容器之间实现数据共享，利用父容器为其他容器实现数据共享
+```bash
+docker run -it --name docker01 dzg/centos:1.0
+docker run -it --name docker02 --volumes-from docker01 dzg/centos:1.0 # 继承docker01的挂载目录
+docker run -it --name docker03 dzg/centos:1.0
+```
 ## dockerFile
 ## docker网络原理 
 ## IDEA整合docker 
