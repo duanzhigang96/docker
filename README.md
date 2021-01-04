@@ -44,13 +44,23 @@ docker 学习笔记
     - [分层理解](#分层理解)
     - [commit镜像](#commit镜像)
   - [容器数据卷](#容器数据卷)
+    - [匿名挂载&具名挂载](#匿名挂载具名挂载)
+    - [如何区分具名挂载、匿名挂载、指定容器挂载](#如何区分具名挂载匿名挂载指定容器挂载)
+    - [dockerFile方式实现挂载文件](#dockerfile方式实现挂载文件)
+    - [数据卷容器](#数据卷容器)
   - [dockerFile](#dockerfile)
+    - [docekrFile介绍](#docekrfile介绍)
+    - [dockerFile构建过程](#dockerfile构建过程)
+      - [基础知识](#基础知识)
+      - [DockerFile的指令](#dockerfile的指令)
+    - [实战测试](#实战测试)
+    - [CMD和ENTRYPOINT的区别](#cmd和entrypoint的区别)
+    - [实战：Tomcate实战](#实战tomcate实战)
   - [docker网络原理](#docker网络原理)
   - [IDEA整合docker](#idea整合docker)
   - [docker Compose](#docker-compose)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
-
-## Docker概述 
+## Docker概述
 ### Docker为什么出现？
 1. 开发-上线俩套环境！ 应用环境，配置
 2. 开发人员，运维人员
@@ -322,7 +332,7 @@ docker cp 0754eec7b305:/home/test.java ./
 3. 自己制作一个镜像DockerFile
 ### Docker镜像加载原理
 ### UnionFS（联合文件系统）
-### 分层理解 
+### 分层理解
 分层下载 重复复用
 ### commit镜像
 ```bash
@@ -343,7 +353,7 @@ docker commit -a "duanzhigang" -m "nginx test" 352ea94c14be dzg_nginx:v1
  2.将docker 镜像上传到Docker Hub
 docker push duanzhigang/dzg_nginx:v1
 ```
-## 容器数据卷
+## 容器数据卷 
 ### 匿名挂载&具名挂载
 ```bash
 # 匿名挂载
@@ -373,16 +383,16 @@ PS C:\Windows\system32> docker volume inspect juming-nginx
 ```
 ### 如何区分具名挂载、匿名挂载、指定容器挂载
 ```bash
--v 容器内路径 # 匿名挂载
--v 卷名：容器内路径 # 具名挂载
--v /宿主机路径：容器内路径 # 指定路径挂载
+-v 容器内路径             # 匿名挂载
+-v 卷名:容器内路径        # 具名挂载
+-v /宿主机路径:容器内路径 # 指定路径挂载
 
 # 拓展
 docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:ro nginx
 docker run -d -P --name nginx01 -v juming-nginx:/etc/nginx:rw nginx
 
-ro read only #只读 只能通过宿主机操作，不同通过容器内修改
-rw read write #可读可写
+ro read only  # 只读 只能通过宿主机操作，不同通过容器内修改
+rw read write # 可读可写
 # 一旦设置了容器权限，容器对我们挂载的内容就有限定。
 ```
 ### dockerFile方式实现挂载文件
@@ -436,8 +446,161 @@ Successfully tagged dzg/centos:1.0
 docker run -it --name docker01 dzg/centos:1.0
 docker run -it --name docker02 --volumes-from docker01 dzg/centos:1.0 # 继承docker01的挂载目录
 docker run -it --name docker03 dzg/centos:1.0
+
+#删除父容器后数据不会丢失
+
+#备份机制
+多个mysql 实现数据共享
 ```
+结论：
+容器之间配置信息的传递，数据卷容器的生命周期一直持续到没有容器使用为止、
+但是一旦持久化到本地，这个时候，本地的数据时不会删除的。
 ## dockerFile
+### docekrFile介绍
+dockerfile 是用来构建docker镜像的文件！命令参数脚本
+构建步骤：
+1. 编写一个dockerFile文件
+2. docekr build 构建成为一个镜像
+3. docker run 运行镜像
+4. docker push 发布镜像（DockerHub）
+查看官方是怎么做的？
+官方的镜像都是基础包，很多功能没有，我们通常搭建自己的镜像。
+官方既然可以制作镜像，我们也可以
+### dockerFile构建过程
+#### 基础知识
+1. 每个保留关键字（指令）都必须是关键字
+2. 按照从上到下的顺序执行
+3. `#表示注释
+4. 每一个指令都会创建提交一个新的镜像层，并提交
+步骤：开发，部署，运维。。。
+dockerFile 是面向开发的。以后我们要发布项目，做镜像，就需要编写dockerfile文件，这个文件非常简单。
+Docker镜像逐渐成为了企业交付的标准
+DockerFile:构建文件，定义了一切步骤，源代码
+DockerFile：通过DockerFile构建生成的镜像，最终发布浩哥运行的产品。
+Docker容器：容器就是镜像运行起来提供服务器。
+#### DockerFile的指令
+```bash
+FROM         # 基础镜像，一切从这里开始构建
+MAINTAINER   # 镜像是谁写的，姓名＋邮箱
+RUN          # 镜像构建的时候需要运行的命令
+ADD          # 步骤，tomcat镜像，这个tomcat压缩包，添加内容
+WORKDIR      # 镜像的工作目录
+VOLUME       # 挂载的目录
+EXPOST       # 暴露端口配置
+CMD          # 指定这个容器启动的时候要运行的命令,最后一个会生效，可以被替代
+ENTRYPOINT   # 指定这个容器启动的时候要运行的命令，可以追加命令
+ONBUILD      # 当构建一个被继承 dockerFile 这个时候就会运行指定
+COPY         # 类似ADD，将文件拷贝到镜像中
+ENV          # 构建的时候设置环境变量
+```
+### 实战测试
+Docker Hub 中99%镜像都是从scratch这个基础镜像过来的，然后配置需要的软件和配置来进行构建
+```shell
+FROM scratch
+ADD centos-7-x86_64-docker.tar.xz /
+
+LABEL \
+    org.label-schema.schema-version="1.0" \
+    org.label-schema.name="CentOS Base Image" \
+    org.label-schema.vendor="CentOS" \
+    org.label-schema.license="GPLv2" \
+    org.label-schema.build-date="20201113" \
+    org.opencontainers.image.title="CentOS Base Image" \
+    org.opencontainers.image.vendor="CentOS" \
+    org.opencontainers.image.licenses="GPL-2.0-only" \
+    org.opencontainers.image.created="2020-11-13 00:00:00+00:00"
+
+CMD ["/bin/bash"]
+```
+创建一个自己的centOS
+```bash
+# 1. 编写DockerFile的文件
+FROM centos
+
+MAINTAINER dzg<duanzhigang@qq.com>
+
+ENV MYPATH /user/local
+
+WORKDIR $MYPATH
+
+RUN yum -y install vim
+
+RUN yum -y install net-tools
+
+EXPOSE 80
+
+CMD echo $MYPATH
+CMD echo "-----end----"
+CMD /bin/bash
+
+# 2. 通过这个文件构建镜像
+-f 指定dockerFile的文件
+docker build -f mydockerfilse-centos  -t dzg/centos:1.0 .
+
+Successfully built 2e47fa117f98
+Successfully tagged dzg/centos:1.0
+
+# 3. 测试运行
+```
+我们可以列出本地进行的变更历史
+```bash
+root@DESKTOP-55LGOP2:/home/dockerfile# docker history 2e47fa117f98
+IMAGE          CREATED          CREATED BY                                      SIZE      COMMENT
+2e47fa117f98   21 minutes ago   /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "/bin…   0B
+0d612669d011   21 minutes ago   /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "echo…   0B
+47c62e995bf8   21 minutes ago   /bin/sh -c #(nop)  CMD ["/bin/sh" "-c" "echo…   0B
+8cb571b0f109   21 minutes ago   /bin/sh -c #(nop)  EXPOSE 80                    0B
+453ea7d04090   21 minutes ago   /bin/sh -c yum -y install net-tools             23.4MB
+ba6b30c3edd5   21 minutes ago   /bin/sh -c yum -y install vim                   58.1MB
+ec8292da67bb   22 minutes ago   /bin/sh -c #(nop) WORKDIR /user/local           0B
+d990e163d8eb   22 minutes ago   /bin/sh -c #(nop)  ENV MYPATH=/user/local       0B
+b8ec647e5040   22 minutes ago   /bin/sh -c #(nop)  MAINTAINER dzg<duanzhigan…   0B
+300e315adb2f   3 weeks ago      /bin/sh -c #(nop)  CMD ["/bin/bash"]            0B
+<missing>      3 weeks ago      /bin/sh -c #(nop)  LABEL org.label-schema.sc…   0B
+<missing>      3 weeks ago      /bin/sh -c #(nop) ADD file:bd7a2aed6ede423b7…   209MB
+```
+### CMD和ENTRYPOINT的区别
+entrypoint 可以直接在后面加命令。
+cmd 不可以会直接覆盖掉。
+```bash
+CMD          # 指定这个容器启动的时候要运行的命令,最后一个会生效，可以被替代
+ENTRYPOINT   # 指定这个容器启动的时候要运行的命令，可以追加命令
+```
+### 实战：Tomcate实战
+1. 准备镜像文件tomcat压缩包，jdk的压缩包
+2. 编写DockerFile文件，官方默认指定DockerFile命名，在build的 -f 是会自动寻找DockerFile文件
+```bash
+FROM centos
+
+MAINTAINER zhangshuai<lazycatzs@qq.com>
+
+ADD jdk-8u221-linux-x64.tar.gz /usr/local
+
+ADD apache-tomcat-8.5.57.tar.gz /usr/local
+
+RUN yum -y install vim
+
+ENV MYPATH /usr/local
+
+WORKDIR $MYPATH
+
+ENV JAVA_HOME /usr/local/jdk1.8.0_221
+
+ENV CLASSPATH $JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar
+
+ENV PATH $PATH:$JAVA_HOME/bin
+
+EXPOSE 8080
+
+CMD  /usr/local/apache-tomcat-8.5.57/bin/startup.sh
+```
+3. 构建镜像
+```bash
+docker build -t diytomcat .
+```
+4. 启动镜像
+5. 访问测试
+6. 发布项目
 ## docker网络原理 
 ## IDEA整合docker 
 ## docker Compose 
