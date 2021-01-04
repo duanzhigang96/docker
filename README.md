@@ -56,7 +56,16 @@ docker 学习笔记
     - [实战测试](#实战测试)
     - [CMD和ENTRYPOINT的区别](#cmd和entrypoint的区别)
     - [实战：Tomcate实战](#实战tomcate实战)
+    - [发布自己的镜像](#发布自己的镜像)
+    - [发布到阿里云镜像服务上](#发布到阿里云镜像服务上)
+    - [小结](#小结)
   - [docker网络原理](#docker网络原理)
+    - [理解docker0](#理解docker0)
+      - [原理](#原理)
+      - [总结](#总结)
+    - [--link （不建议使用）](#--link-不建议使用)
+    - [自定义网络](#自定义网络)
+    - [网络联通（不同的网络）](#网络联通不同的网络)
   - [IDEA整合docker](#idea整合docker)
   - [docker Compose](#docker-compose)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
@@ -601,7 +610,218 @@ docker build -t diytomcat .
 4. 启动镜像
 5. 访问测试
 6. 发布项目
+### 发布自己的镜像
+1. 注册自己的账号 https://registry.hub.docker.com/
+2. 在我们服务器上提交自己的镜像
+3. docker login
+4. 登录完毕后可以提交镜像了
+5. docker push duanzhignag/diytomcat:1.0
+### 发布到阿里云镜像服务上
+1. 登录阿里云
+2. 找到容器镜像服务
+3. 镜像仓库
+4. 创建一个命名空间
+5. 创建容器镜像
+6. 浏览阿里云仓库
+
+![alt 属性文本](./aliyun-push.png)
+### 小结
+![alt 属性文本](./all.png)
 ## docker网络原理 
+### 理解docker0
+docker run -d -P --name tomcat01 tomcat 
+ip addr 查看容器ip
+发现容器启动的时候会得到一个eth0if262 IP地址，docker分配的
+
+linux 可以ping通docker容器的IP
+#### 原理
+1. 我们每启动一个docker容器，docker会给docker容器分配一个IP，只要电脑上安装了docker，就会有一个docker0 桥接模式，使用的技术是evth-pair技术
+evth-pair就是一堆的虚拟设备接口，它们都是成对出现的，一段连着协议，一段别此相连
+正因为有这个特性，evth-pair充当一个桥梁，连接各种虚拟网络设备。
+2. 我们测试发现tomcat01和tomcat02 之间是可以ping通的！！
+3. ![](./evth-pair.png)
+#### 总结
+tomcat01和tomcat02是公用的一个路由器，docker0
+所有的容器不指定网络的情况下，都是docker0路由的，docker会给我们的容器分配一个默认的可用IP
+
+255.255.0.1/16 域 局域网 
+有255.255.0.0~255.255.255.255个地址 大约是65535~个
+Docker使用的是Linux的桥接，宿主机中是一个Docker容器的网桥docker0
+Docker中的所有的网络接口都是虚拟的，虚拟的转发效率高。
+### --link （不建议使用）
+思考一个场景，我们编写了一个微服务，database url=ip，项目不重启，数据库ip换掉了，我们希望可以处理这个问题，可以用名字访问容器吗？
+```bash
+docker run -d -P --name tomcat03 --link tomcat02 tomcat 
+
+root@e66c5b8d7bd5:/usr/local/tomcat# ping tomcat02
+PING tomcat02 (172.17.0.3) 56(84) bytes of data.
+64 bytes from tomcat02 (172.17.0.3): icmp_seq=1 ttl=64 time=0.114 ms
+64 bytes from tomcat02 (172.17.0.3): icmp_seq=2 ttl=64 time=0.083 ms
+64 bytes from tomcat02 (172.17.0.3): icmp_seq=3 ttl=64 time=0.083 ms
+```
+配置地址在 容器内部的host文件中
+```bash
+root@e66c5b8d7bd5:/usr/local/tomcat# cat /etc/hosts
+127.0.0.1       localhost
+::1     localhost ip6-localhost ip6-loopback
+fe00::0 ip6-localnet
+ff00::0 ip6-mcastprefix
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters
+172.17.0.3      tomcat02 3c46d2d03c58
+172.17.0.4      e66c5b8d7bd5
+```
+### 自定义网络
+容器互联：
+```bash
+# 查看所有网络
+PS C:\WINDOWS\system32> docker network ls                                                                                                                                                                               NETWORK ID     NAME      DRIVER    SCOPE
+30d2ca3aee7e   bridge    bridge    local
+171901efc09c   host      host      local
+009832dbf1aa   none      null      local
+```
+网络模式
+1. bridge：桥接模式
+2. none：不配置网络
+3. host：主机模式（和宿主机共享网络）
+4. container：容器内网络联通
+```bash
+# 我们直接启动的命令会默认添加--net bridge参数
+docker run  -d -P --name tomcat01 --net bridge tomcat 
+#docker0特点： 默认，域名不能访问
+
+#自定义网络
+PS C:\WINDOWS\system32> docker network create --help
+Usage:  docker network create [OPTIONS] NETWORK
+
+Create a network
+
+Options:
+      --attachable           Enable manual container attachment
+      --aux-address map      Auxiliary IPv4 or IPv6 addresses used by
+                             Network driver (default map[])
+      --config-from string   The network from which to copy the configuration
+      --config-only          Create a configuration only network
+  -d, --driver string        Driver to manage the Network (default "bridge")
+      --gateway strings      IPv4 or IPv6 Gateway for the master subnet
+      --ingress              Create swarm routing-mesh network
+      --internal             Restrict external access to the network
+      --ip-range strings     Allocate container ip from a sub-range
+      --ipam-driver string   IP Address Management Driver (default "default")
+      --ipam-opt map         Set IPAM driver specific options (default map[])
+      --ipv6                 Enable IPv6 networking
+      --label list           Set metadata on a network
+  -o, --opt map              Set driver specific options (default map[])
+      --scope string         Control the network is scope
+      --subnet strings       Subnet in CIDR format that represents a
+                             network segment
+
+# --driver bridge 桥接
+# --subnet 192.168.0.0/16 默认子网
+# --gateway 192.168.1.1 网关
+PS C:\WINDOWS\system32> docker network create --driver bridge --subnet 192.168.1.0/16 --gateway 192.168.1.1 mynet       29d13f4c45f958bd09bfed43a76d46db7841cf8bf1fdcccd1e05b193acd07c31
+PS C:\WINDOWS\system32> docker network ls                                                                               NETWORK ID     NAME      DRIVER    SCOPE
+30d2ca3aee7e   bridge    bridge    local
+171901efc09c   host      host      local
+29d13f4c45f9   mynet     bridge    local
+009832dbf1aa   none      null      local
+
+# 查看网络状态
+PS C:\WINDOWS\system32>  docker network inspect mynet                                                                   [
+    {
+        "Name": "mynet",
+        "Id": "29d13f4c45f958bd09bfed43a76d46db7841cf8bf1fdcccd1e05b193acd07c31",
+        "Created": "2021-01-04T14:29:47.2823807Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "192.168.1.0/16",
+                    "Gateway": "192.168.1.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {},
+        "Options": {},
+        "Labels": {}
+    }
+]
+# 配置自己的网络
+PS C:\WINDOWS\system32> docker run -d -P --name tomcat01 --net mynet tomcat                                             cba194b6e06ad1be19e901d59a609257a9ab52bec43a63c87e07c510aeb6d45a
+PS C:\WINDOWS\system32> docker run -d -P --name tomcat02 --net mynet tomcat                                             5823dba3c0f6fc15136af07961abf3e17036f1df5fe75cba5d0e6cc6e6f9e47d
+PS C:\WINDOWS\system32> docker ps                                                                                       
+CONTAINER ID   IMAGE     COMMAND             CREATED          STATUS         PORTS                     NAMES
+5823dba3c0f6   tomcat    "catalina.sh run"   5 seconds ago    Up 3 seconds   0.0.0.0:55004->8080/tcp   tomcat02
+cba194b6e06a   tomcat    "catalina.sh run"   10 seconds ago   Up 9 seconds   0.0.0.0:55003->8080/tcp   tomcat01
+PS C:\WINDOWS\system32> docker network inspect mynet                                                                    [
+    {
+        "Name": "mynet",
+        "Id": "29d13f4c45f958bd09bfed43a76d46db7841cf8bf1fdcccd1e05b193acd07c31",
+        "Created": "2021-01-04T14:29:47.2823807Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "192.168.0.0/16",
+                    "Gateway": "192.168.1.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "5823dba3c0f6fc15136af07961abf3e17036f1df5fe75cba5d0e6cc6e6f9e47d": {
+                "Name": "tomcat02",
+                "EndpointID": "757cc297abb5210c4d7d3509e64810b1aef8397fe5c2091fd40ed88e5e5aa643",
+                "MacAddress": "02:42:c0:a8:00:02",
+                "IPv4Address": "192.168.0.2/16",
+                "IPv6Address": ""
+            },
+            "cba194b6e06ad1be19e901d59a609257a9ab52bec43a63c87e07c510aeb6d45a": {
+                "Name": "tomcat01",
+                "EndpointID": "a95071a0ba069231f6c994eabb084e731df5e2d7c9139021544a7d9045be9d20",
+                "MacAddress": "02:42:c0:a8:00:01",
+                "IPv4Address": "192.168.0.1/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {}
+    }
+]
+# 连接成功
+root@e1ea620921bc:/usr/local/tomcat# ping tomcat02
+PING tomcat02 (192.168.0.2) 56(84) bytes of data.
+64 bytes from e1ea620921bc (192.168.0.2): icmp_seq=1 ttl=64 time=0.055 ms
+64 bytes from e1ea620921bc (192.168.0.2): icmp_seq=2 ttl=64 time=0.056 ms
+64 bytes from e1ea620921bc (192.168.0.2): icmp_seq=3 ttl=64 time=0.056 ms
+64 bytes from e1ea620921bc (192.168.0.2): icmp_seq=4 ttl=64 time=0.053 ms
+```
+我们自定义的网络docker都已经帮我们维护好了对应的关系，推荐使用这样使用网络
+
+好处：不同的集群使用不同的网络
+
+### 网络联通（不同的网络）
 ## IDEA整合docker 
 ## docker Compose 
 ## dockerSwarm（简化版k8s） 
