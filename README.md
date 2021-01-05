@@ -66,7 +66,8 @@ docker 学习笔记
     - [--link （不建议使用）](#--link-不建议使用)
     - [自定义网络](#自定义网络)
     - [网络联通（不同的网络）](#网络联通不同的网络)
-  - [IDEA整合docker](#idea整合docker)
+    - [部署redis集群（主从复制,高可用）](#部署redis集群主从复制高可用)
+    - [SpringBoot微服务部署](#springboot微服务部署)
   - [docker Compose](#docker-compose)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
 ## Docker概述
@@ -157,6 +158,7 @@ $ sudo yum-config-manager \
 
 # 4.安装docker相关的内容
 # 更新yum软件包索引
+yum makecache fast
 # docker-ce 社区版 ee 企业版
 $ sudo yum install docker-ce docker-ce-cli containerd.io
 
@@ -822,7 +824,114 @@ PING tomcat02 (192.168.0.2) 56(84) bytes of data.
 好处：不同的集群使用不同的网络
 
 ### 网络联通（不同的网络）
-## IDEA整合docker 
+```bash
+PS C:\WINDOWS\system32> docker network --help                                
+Usage:  docker network COMMAND
+Manage networks
+Commands:
+  connect     Connect a container to a network   # 网络联通的核心
+  create      Create a network
+  disconnect  Disconnect a container from a network
+  inspect     Display detailed information on one or more networks
+  ls          List networks
+  prune       Remove all unused networks
+  rm          Remove one or more networks
+
+
+PS C:\WINDOWS\system32>  docker network connect    --help 
+
+Usage:  docker network connect [OPTIONS] NETWORK CONTAINER  # 命令用法
+Connect a container to a network
+Options:
+      --alias strings           Add network-scoped alias for the container
+      --driver-opt strings      driver options for the network
+      --ip string               IPv4 address (e.g., 172.30.100.104)
+      --ip6 string              IPv6 address (e.g., 2001:db8::33)
+      --link list               Add link to another container
+      --link-local-ip strings   Add a link-local address for the container
+
+docker network connect mynet tomcat03
+
+docker network inspect mynet  # 测试发现实现不同网络的互通
+[
+      {
+        "Name": "mynet",
+        "Id": "74b26ae7eff9e61049b43d9cfd9569df20f170c073fa8ed970eca036df4b3cc6",
+        "Created": "2021-01-04T14:39:22.7373401Z",
+        "Scope": "local",
+        "Driver": "bridge",
+        "EnableIPv6": false,
+        "IPAM": {
+            "Driver": "default",
+            "Options": {},
+            "Config": [
+                {
+                    "Subnet": "192.168.1.0/16",
+                    "Gateway": "192.168.1.1"
+                }
+            ]
+        },
+        "Internal": false,
+        "Attachable": false,
+        "Ingress": false,
+        "ConfigFrom": {
+            "Network": ""
+        },
+        "ConfigOnly": false,
+        "Containers": {
+            "9aaf6033ec8e1c77ecbd79c84b1a8a0cd045e5bc2d0383687a3a09e5757c66b8": {
+                "Name": "tomcat01",
+                "EndpointID": "744b65f750584b8618c2d03c3a98374d1c4bfdda846eadf01d3c159595e27fc7",
+                "MacAddress": "02:42:c0:a8:00:02",
+                "IPv4Address": "192.168.0.2/16",
+                "IPv6Address": ""
+            },
+            "e0c9036b9f7704b0d66570fe0962c64bbaab1823c6cf301fe825b42a4d94c2d9": {
+                "Name": "tomcat03",
+                "EndpointID": "da4251636b2285a6a7709dde93060620cec8294de942a3e52424abf9572b5edf",
+                "MacAddress": "02:42:c0:a8:00:03",
+                "IPv4Address": "192.168.0.3/16",
+                "IPv6Address": ""
+            },
+            "e1ea620921bc60f1c467b79622ea04c1c5bc2535018abb5d3f34efe86857d9af": {
+                "Name": "tomcat02",
+                "EndpointID": "d60087b41e4c1f59cf4fdef472a8477821f1ed24de07424742ae8224014f9b41",
+                "MacAddress": "02:42:c0:a8:00:01",
+                "IPv4Address": "192.168.0.1/16",
+                "IPv6Address": ""
+            }
+        },
+        "Options": {},
+        "Labels": {}
+    }
+]
+
+PS C:\WINDOWS\system32> docker exec -it e0c9036b9f77 /bin/bash                                                                                                                                                                                                                 root@e0c9036b9f77:/usr/local/tomcat# ping tomcat01
+PING tomcat01 (192.168.0.2) 56(84) bytes of data.
+64 bytes from tomcat01.mynet (192.168.0.2): icmp_seq=1 ttl=64 time=0.132 ms
+64 bytes from tomcat01.mynet (192.168.0.2): icmp_seq=2 ttl=64 time=0.089 ms
+64 bytes from tomcat01.mynet (192.168.0.2): icmp_seq=3 ttl=64 time=0.061 ms
+64 bytes from tomcat01.mynet (192.168.0.2): icmp_seq=4 ttl=64 time=0.076 ms
+64 bytes from tomcat01.mynet (192.168.0.2): icmp_seq=5 ttl=64 time=0.062 ms
+```
+### 部署redis集群（主从复制,高可用）
+![](./redis-colony.png)
+### SpringBoot微服务部署
+1. 将代码打成jar包
+2. 编写DockerFile文件
+```bash
+FROM java:8
+
+COPY *.jar /app.jar
+
+CMD ["--server.port=8080"]
+
+EXPOSE 8080
+
+ENTRYPOINT ['java',"-jar" ,"/app.jar"]
+```
+3. 构建镜像  docker build -t test -f DockerFile .
+4. 运行镜像
 ## docker Compose 
 ## dockerSwarm（简化版k8s） 
 #挂载目录并运行
