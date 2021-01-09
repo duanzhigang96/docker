@@ -69,6 +69,10 @@ docker 学习笔记
     - [部署redis集群（主从复制,高可用）](#部署redis集群主从复制高可用)
     - [SpringBoot微服务部署](#springboot微服务部署)
   - [docker Compose](#docker-compose)
+    - [简介](#简介)
+      - [A docker-compose.yml looks like this](#a-docker-composeyml-looks-like-this)
+    - [Compose 重要概念](#compose-重要概念)
+    - [Docker Compose 安装](#docker-compose-安装)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
 ## Docker概述
 ### Docker为什么出现？
@@ -933,7 +937,53 @@ ENTRYPOINT ['java',"-jar" ,"/app.jar"]
 3. 构建镜像  docker build -t test -f DockerFile .
 4. 运行镜像
 ## docker Compose 
+### 简介
+Compose is a tool for defining and running multi-container Docker applications. With Compose, you use a YAML file to configure your application’s services. Then, with a single command, you create and start all the services from your configuration. To learn more about all the features of Compose, see the list of features.
+
+Compose works in all environments: production, staging, development, testing, as well as CI workflows. You can learn more about each case in Common Use Cases.
+
+Using Compose is basically a three-step process:
+
+1. Define your app’s environment with a **Dockerfile** so it can be reproduced anywhere.
+
+2. Define the services that make up your app in **docker-compose.yml** so they can be run together in an isolated environment.
+
+3. Run **docker-compose up** and Compose starts and runs your entire app.
+
+Docker Compose 是Docker官方的开运项目，需要安装
+DockerFile让程序在任何地方运行
+#### A docker-compose.yml looks like this
+```bash
+version: "3.9"  # optional since v1.27.0
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/code
+      - logvolume01:/var/log
+    links:
+      - redis
+  redis:
+    image: redis
+volumes:
+  logvolume01: {}
+```
+### Compose 重要概念
+1. 服务Service，容器，应用
+2. 项目project 一组关联的容器 
+
+### Docker Compose 安装
+1. 下载
+官方下载地址：
+sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+国内下载地址：
+sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+
+
 ## dockerSwarm（简化版k8s） 
+集群的方式部署。
 #挂载目录并运行
 ```bash
 docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
