@@ -73,6 +73,9 @@ docker 学习笔记
       - [A docker-compose.yml looks like this](#a-docker-composeyml-looks-like-this)
     - [Compose 重要概念](#compose-重要概念)
     - [Docker Compose 安装](#docker-compose-安装)
+    - [体验： https://docs.docker.com/compose/gettingstarted/](#体验-httpsdocsdockercomcomposegettingstarted)
+    - [yaml 规则](#yaml-规则)
+    - [1分钟搭建博客](#1分钟搭建博客)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
 ## Docker概述
 ### Docker为什么出现？
@@ -973,7 +976,6 @@ volumes:
 ### Compose 重要概念
 1. 服务Service，容器，应用
 2. 项目project 一组关联的容器 
-
 ### Docker Compose 安装
 1. 下载
 官方下载地址：
@@ -981,10 +983,151 @@ sudo curl -L "https://github.com/docker/compose/releases/download/1.27.4/docker-
 国内下载地址：
 sudo curl -L https://get.daocloud.io/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
 
+### 体验： https://docs.docker.com/compose/gettingstarted/
 
+### yaml 规则
+1. docker-compose.yaml 核心 三层
+```bash
+version 
+services
+  服务1
+    images
+    build
+    network
+    ...
+  服务3
+    images
+    build
+    network
+  服务3
+    images
+    build
+    network
+其他配置 网络卷
+```
+
+举例:官方文档，开源项目
+
+
+```bash
+version: '3.3'
+services:
+  php:
+    container_name: "php"
+    build:
+      context: ./php
+      dockerfile: Dockerfile
+      args:
+        BASE_DOCKER_IMAGE: ###
+    ports:
+      - 8080:80
+    volumes:
+    - ./test_cms:/opt/usen/test/current
+  mop:
+    container_name: "mop"
+    build:
+      context: ./mop
+      dockerfile: Dockerfile
+      args:
+        BASE_DOCKER_IMAGE: ###
+    ports:
+      - 9001:80
+    volumes:
+    - ./test_payment-develop:/opt/usen/test_payment-develop/current
+  cms:
+    container_name: cms
+    build:
+      context: ./cms
+      dockerfile: Dockerfile
+      args:
+        BASE_DOCKER_IMAGE: ###
+    ports:
+      - 9002:9002
+    privileged: true
+    volumes:
+      - ./test_cms_front:/app
+    tty: true
+    stdin_open: true
+    command: /bin/sh
+  sp:
+    container_name: sp
+    build:
+      context: ./sp
+      #dockerfile: Dockerfile
+      args:
+        BASE_DOCKER_IMAGE: ###
+    ports:
+      - 9003:9003
+    privileged: true
+    volumes:
+      - ./test_app_front:/app
+    tty: true
+    stdin_open: true
+    command: /bin/sh
+  db:
+    container_name: "db"
+    restart: always
+    image: mysql:5.6
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      TZ: 'Asia/Tokyo'
+    ports:
+      - 3306:3306
+    command: 'mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci'
+    volumes:
+      - ./db/data:/var/lib/mysql
+      #- ./db/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./db/sql:/docker-entrypoint-initdb.d
+networks:
+  default:
+    external:
+      name: local_test_network
+
+```
+
+### 1分钟搭建博客
+```bash
+1.Change into your project directory.
+For example, if you named your directory my_wordpress
+
+cd my_wordpress/
+
+2.Create a docker-compose.yml file that starts your WordPress blog and a separate MySQL instance with a volume mount for data persistence:
+version: '3.3'
+
+services:
+   db:
+     image: mysql:5.7
+     volumes:
+       - db_data:/var/lib/mysql
+     restart: always
+     environment:
+       MYSQL_ROOT_PASSWORD: somewordpress
+       MYSQL_DATABASE: wordpress
+       MYSQL_USER: wordpress
+       MYSQL_PASSWORD: wordpress
+
+   wordpress:
+     depends_on:
+       - db
+     image: wordpress:latest
+     ports:
+       - "8000:80"
+     restart: always
+     environment:
+       WORDPRESS_DB_HOST: db:3306
+       WORDPRESS_DB_USER: wordpress
+       WORDPRESS_DB_PASSWORD: wordpress
+       WORDPRESS_DB_NAME: wordpress
+volumes:
+    db_data: {}
+
+3.
+docker-compose up -d
+```
 ## dockerSwarm（简化版k8s） 
 集群的方式部署。
 #挂载目录并运行
 ```bash
-docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_uplink_use_git/new_uplink_payment:/opt/usen/uplink/current wqcyber/new_uplink_php:v2
+docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_test_use_git/new_test_payment:/opt/usen/test/current wqcyber/new_test_php:v2
 ```
