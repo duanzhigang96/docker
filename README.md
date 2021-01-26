@@ -77,6 +77,7 @@ docker 学习笔记
     - [yaml 规则](#yaml-规则)
     - [1分钟搭建博客](#1分钟搭建博客)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
+    - [Raft协议](#raft协议)
 ## Docker概述
 ### Docker为什么出现？
 1. 开发-上线俩套环境！ 应用环境，配置
@@ -1127,7 +1128,35 @@ docker-compose up -d
 ```
 ## dockerSwarm（简化版k8s） 
 集群的方式部署。
-#挂载目录并运行
-```bash
-docker run -d --name <iamgeName> -p 3030:80 -v E:/projectE/new_test_use_git/new_test_payment:/opt/usen/test/current wqcyber/new_test_php:v2
+
+manager 之间可通信  worker之间不能通信
+1. 准备4台服务器
+2. xshell 同步指令 安装docker
+3. 将一台机器设置为集群的主节点  第一台机器执行  manager节点
+```bash 
+docker swarm init --advertise-addr 172.24.82.149(私网地址)
 ```
+4. docker swarm join 加入一个节点
+```bash 
+# 获取令牌 生成加入节点命令
+docker swarm join-token manager
+docker swarm join-token worker
+```
+5. 第二台机器执行 
+```bash 
+docker swarm join --token SWMTKN-1-1ibczza1ku9btoux61xvyrxrco8gefgi5ukbtax5bfmx1ljtuj-9xz1frrjsnbj3f5er4as0li9b 172.17.59.99:2377
+```
+6. 第三台机器执行
+```bash 
+docker swarm join --token SWMTKN-1-1ibczza1ku9btoux61xvyrxrco8gefgi5ukbtax5bfmx1ljtuj-9xz1frrjsnbj3f5er4as0li9b 172.17.59.99:2377
+```
+7. 第四台机器执行  manager节点
+```bash 
+docker swarm join --token SWMTKN-1-1ibczza1ku9btoux61xvyrxrco8gefgi5ukbtax5bfmx1ljtuj-9xz1frrjsnbj3f5er4as0li9b 172.17.59.99:2377
+```
+8. 查看节点
+```bash 
+docker node ls
+```
+
+### Raft协议
