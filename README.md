@@ -78,6 +78,10 @@ docker 学习笔记
     - [1分钟搭建博客](#1分钟搭建博客)
   - [dockerSwarm（简化版k8s）](#dockerswarm简化版k8s)
     - [Raft协议](#raft协议)
+    - [docker service 可以实现扩缩容](#docker-service-可以实现扩缩容)
+    - [docker Stack](#docker-stack)
+    - [docker Secret](#docker-secret)
+    - [docker Config](#docker-config)
 ## Docker概述
 ### Docker为什么出现？
 1. 开发-上线俩套环境！ 应用环境，配置
@@ -1127,7 +1131,11 @@ volumes:
 docker-compose up -d
 ```
 ## dockerSwarm（简化版k8s） 
-集群的方式部署。
+
+swarm：集群的方式部署。 集群的管理和编排，docker 可以初始化一个swarm集群，其他节点可以加入（管理，工作者）。
+node：就是一个docker 节点，多个节点就组成了一个网络集群（管理，工作者）。
+service：任务，可以在管理节点或者在工作节点中来运行，每一个service可以创建多个副本，每个副本中运行的是service容器。
+task：容器内的命令
 
 manager 之间可通信  worker之间不能通信
 1. 准备4台服务器
@@ -1160,3 +1168,23 @@ docker node ls
 ```
 
 ### Raft协议
+1. 双主双从：假设一个节点宕机，其他节点是否可用
+2. Raft协议：保证大多数节点存活才可以用
+实验：
+1. 将docker1 机器停止，另外一个主节点也不能使用了。
+2. 可以将worker节点离开 状态变为 DONE
+3. worker 节点只是工作，只有管理节点才能执行管理命令
+4. 集群可用 3个主节点  一个宕机还可使用，俩个宕机其他不能使用
+
+### docker service 可以实现扩缩容
+```bash
+docker service create -p 8080:80 --name my-nginx nginx
+docker service ps my-nginx
+docker service ls
+docker service update --relipcas 3 my-nginx  # 为nginx 创建3个副本
+```
+集群中任意的节点都可以访问，服务可以有多个副本动态扩缩容实现高可用
+
+### docker Stack
+### docker Secret
+### docker Config
